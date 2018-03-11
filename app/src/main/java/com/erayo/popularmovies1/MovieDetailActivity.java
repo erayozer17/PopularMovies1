@@ -8,20 +8,33 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import java.net.MalformedURLException;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MovieDetailActivity extends AppCompatActivity {
 
-    private ImageView poster;
-    private TextView tv_title, tv_date, tv_overview, tv_rating;
+    @BindView(R.id.imageView) ImageView poster;
+    @BindView(R.id.tv_title) TextView tv_title;
+    @BindView(R.id.tv_release_date) TextView tv_date;
+    @BindView(R.id.tv_overview) TextView tv_overview;
+    @BindView(R.id.tv_rate) TextView tv_rating;
 
     private String poster_url, title, date, overview;
     private double rating;
+
+    private Movie movie;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_detail);
 
-        init();
+        ButterKnife.bind(this);
+
+        movie = getIntent().getParcelableExtra("movie");
+
         initValues();
 
         Picasso.with(this)
@@ -39,19 +52,15 @@ public class MovieDetailActivity extends AppCompatActivity {
 
     }
 
-    private void init() {
-        poster = findViewById(R.id.imageView);
-        tv_title = findViewById(R.id.tv_title);
-        tv_date = findViewById(R.id.tv_release_date);
-        tv_overview = findViewById(R.id.tv_overview);
-        tv_rating = findViewById(R.id.tv_rate);
-    }
-
     private void initValues(){
-        poster_url = getIntent().getExtras().getString("poster_url");
-        title = getIntent().getExtras().getString("title");
-        date = getIntent().getExtras().getString("release_date");
-        overview = getIntent().getExtras().getString("overview");
-        rating = getIntent().getExtras().getDouble("rating");
+        try {
+            poster_url = String.valueOf(ApiUtilities.imageUrl(movie.getPoster_path()));
+            title = movie.getTitle();
+            date = movie.getRelease_date();
+            overview = movie.getOverview();
+            rating = movie.getVote_average();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
     }
 }

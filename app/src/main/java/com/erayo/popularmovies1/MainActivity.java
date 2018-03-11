@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     List<Movie> mainListMovies;
     Toast toast;
     JsonUtil jsonUtil = new JsonUtil(this);
-    static ApiUtilities.SortingType sortingType = ApiUtilities.SortingType.POPULARITY_DESC;
+    static ApiUtilities.SortingType sortingType = ApiUtilities.SortingType.VOTEAVERAGE_DESC;
     Menu mMenu;
 
     @Override
@@ -53,16 +53,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
         Movie movie = mainListMovies.get(clickedItemPosition);
 
         Intent intent = new Intent(MainActivity.this, MovieDetailActivity.class);
-        try {
-            intent.putExtra("poster_url", String.valueOf(ApiUtilities.imageUrl(movie.getPoster_path())));
-            intent.putExtra("title", movie.getTitle());
-            intent.putExtra("release_date", movie.getRelease_date());
-            intent.putExtra("overview", movie.getOverview());
-            intent.putExtra("rating", movie.getVote_average());
-            startActivity(intent);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+        intent.putExtra("movie", movie);
+        startActivity(intent);
     }
 
     @Override
