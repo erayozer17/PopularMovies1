@@ -139,8 +139,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     }
 
     @Override
-    public void onResponse(List<Movie> movies) {
-        mainListMovies = movies;
+    public void onResponse(List list) {
+        mainListMovies = list;
         adapter = new RecyclerViewAdapter(mainListMovies, this, this);
         recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();

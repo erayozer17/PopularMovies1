@@ -15,13 +15,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class JsonUtil extends AsyncTask<URL, Void, List<Movie>> {
+public class JsonUtil extends AsyncTask<URL, Void, List> {
 
     private static final String POSTER_PATH = "poster_path";
     private static final String TITLE = "title";
     private static final String RELEASE_DATE = "release_date";
     private static final String OVERVIEW = "overview";
     private static final String VOTE_AVERAGE_INT = "vote_average";
+    private static final String ID = "id";
+    private static final String NAME = "name";
+    private static final String KEY = "key";
+    private static final String AUTHOR = "author";
+    private static final String CONTENT = "content";
+
+    private static final String RESULTS = "results";
 
     static private List<Movie> response;
     private Callback callback;
@@ -33,8 +40,8 @@ public class JsonUtil extends AsyncTask<URL, Void, List<Movie>> {
     }
 
     @Override
-    protected List<Movie> doInBackground(URL... urls) {
-        List<Movie> listMovies;
+    protected List doInBackground(URL... urls) {
+        List list;
         JSONObject jsonObject;
 
         if (urls.length == 0) {
@@ -44,13 +51,20 @@ public class JsonUtil extends AsyncTask<URL, Void, List<Movie>> {
         URL url = urls[0];
         try {
 
-            String plainJsonResponse = getResponseFromHttpUrl(url);// SAĞLAM
+            String plainJsonResponse = getResponseFromHttpUrl(url);
 
             jsonObject = new JSONObject(plainJsonResponse);
-            listMovies = prepareJsonMovies(jsonObject, "results");
+            if (ApiUtilities.TAG.equals(ApiUtilities.MAIN)){
+                list = prepareJsonMovies(jsonObject, RESULTS);
+            } else if (ApiUtilities.TAG.equals(ApiUtilities.TRAILERS)){
+                list = prepareJsonTrailers(jsonObject, RESULTS);
+            } else if (ApiUtilities.TAG.equals(ApiUtilities.COMMENTS)){
+                list = prepareJsonComments(jsonObject, RESULTS);
+            } else {
+                list = new ArrayList();
+            }
 
-            return listMovies;
-
+            return list;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -58,7 +72,7 @@ public class JsonUtil extends AsyncTask<URL, Void, List<Movie>> {
     }
 
     @Override
-    protected void onPostExecute(List<Movie> list) {
+    protected void onPostExecute(List list) {
         callback.onResponse(list);
     }
 
@@ -93,7 +107,43 @@ public class JsonUtil extends AsyncTask<URL, Void, List<Movie>> {
                 movie.setRelease_date(jsonArray.getJSONObject(i).optString(RELEASE_DATE));
                 movie.setTitle(jsonArray.getJSONObject(i).optString(TITLE));
                 movie.setVote_average(jsonArray.getJSONObject(i).getDouble(VOTE_AVERAGE_INT));
+                movie.setId(jsonArray.getJSONObject(i).getInt(ID));
                 list.add(movie);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    private List<Trailer> prepareJsonTrailers(JSONObject jsonObject, String nameOfArray) {
+        List<Trailer> list = new ArrayList<>();
+        Trailer trailer;
+        try {
+            JSONArray jsonArray = jsonObject.getJSONArray(nameOfArray);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                trailer = new Trailer();
+                trailer.setTrailerTitle(jsonArray.getJSONObject(i).optString(NAME));
+                trailer.setTrailerUrl(jsonArray.getJSONObject(i).optString(KEY));
+                list.add(trailer);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+
+    private List prepareJsonComments(JSONObject jsonObject, String nameOfArray) {
+        List<Comment> list = new ArrayList<>();
+        Comment comment;
+        try {
+            JSONArray jsonArray = jsonObject.getJSONArray(nameOfArray);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                comment = new Comment();
+                comment.setAuthor(jsonArray.getJSONObject(i).optString(AUTHOR));
+                comment.setContent(jsonArray.getJSONObject(i).optString(CONTENT));
+                list.add(comment);
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -110,6 +160,6 @@ public class JsonUtil extends AsyncTask<URL, Void, List<Movie>> {
     }
 
     public interface Callback {
-        void onResponse(List<Movie> movies);
+        void onResponse(List list);
     }
 }

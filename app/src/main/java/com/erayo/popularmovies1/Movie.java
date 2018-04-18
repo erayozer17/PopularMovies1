@@ -14,6 +14,7 @@ public class Movie implements Parcelable{
     String release_date;
     String overview;
     double vote_average;
+    int id;
 
     private Movie(Parcel in){
         poster_path = in.readString();
@@ -21,6 +22,7 @@ public class Movie implements Parcelable{
         release_date = in.readString();
         overview = in.readString();
         vote_average = in.readDouble();
+        id = in.readInt();
     }
 
     @Override
@@ -35,6 +37,7 @@ public class Movie implements Parcelable{
         parcel.writeString(release_date);
         parcel.writeString(overview);
         parcel.writeDouble(vote_average);
+        parcel.writeInt(id);
     }
 
     public static final Parcelable.Creator<Movie> CREATOR = new Creator<Movie>() {

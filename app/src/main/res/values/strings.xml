@@ -6,4 +6,6 @@
     <string name="voting_desc">voting_desc</string>
 
     <string name="con_warn">This application needs Internet connection to function.</string>
+    <string name="not_available">Not Available</string>
+    <string name="play_image">play_image</string>
 </resources>
