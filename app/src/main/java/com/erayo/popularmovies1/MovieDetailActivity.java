@@ -3,6 +3,7 @@ package com.erayo.popularmovies1;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -16,6 +17,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.erayo.popularmovies1.db.DbHelper;
 import com.github.paolorotolo.expandableheightlistview.ExpandableHeightListView;
 import com.squareup.picasso.Picasso;
 
@@ -48,6 +50,8 @@ public class MovieDetailActivity extends AppCompatActivity implements JsonUtil.C
 
     private Movie movie;
 
+    private DbHelper db;
+
     private List<Trailer> trailers;
     private List<Comment> comments;
 
@@ -59,6 +63,8 @@ public class MovieDetailActivity extends AppCompatActivity implements JsonUtil.C
         setContentView(R.layout.activity_movie_detail);
 
         ButterKnife.bind(this);
+
+        db = new DbHelper(getBaseContext());
 
         movie = getIntent().getParcelableExtra("movie");
 
@@ -86,6 +92,8 @@ public class MovieDetailActivity extends AppCompatActivity implements JsonUtil.C
         tv_rating.setText(String.valueOf(rating));
         tv_rating.append("/10");
 
+        checkIfMovieIsFavoriteForStar();
+
         URL trailersUrl = null;
         try {
             trailersUrl = ApiUtilities.trailersUrl(id);
@@ -110,16 +118,27 @@ public class MovieDetailActivity extends AppCompatActivity implements JsonUtil.C
     }
 
     @OnClick(R.id.star_imageButton)
-    public void changeStarColor(){
+    public void starOnTouchSaveOrDelete(){
         if (star_image_button.getTag() == null || star_image_button.getTag().equals("off")){
             star_image_button.setImageResource(android.R.drawable.btn_star_big_on);
             star_image_button.setTag("on");
+            db.insertMovie(movie);
         }
         else if (star_image_button.getTag().equals("on")){
             star_image_button.setImageResource(android.R.drawable.btn_star_big_off);
             star_image_button.setTag("off");
+            db.deleteMovie(movie);
         }
+    }
 
+    public void checkIfMovieIsFavoriteForStar(){
+        if (db.getMovie(movie.getId()).getCount() == 0){
+            star_image_button.setImageResource(android.R.drawable.btn_star_big_off);
+            star_image_button.setTag("off");
+        } else {
+            star_image_button.setImageResource(android.R.drawable.btn_star_big_on);
+            star_image_button.setTag("on");
+        }
     }
 
     @Override

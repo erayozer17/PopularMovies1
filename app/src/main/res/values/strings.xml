@@ -4,6 +4,7 @@
 
     <string name="popularity_desc">popularity_desc</string>
     <string name="voting_desc">voting_desc</string>
+    <string name="favorites">favorites</string>
 
     <string name="con_warn">This application needs Internet connection to function.</string>
     <string name="not_available">Not Available</string>

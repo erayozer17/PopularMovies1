@@ -64,7 +64,8 @@ class ApiUtilities {
 
     enum SortingType{
         POPULARITY_DESC("popular"),
-        VOTEAVERAGE_DESC("top_rated");
+        VOTEAVERAGE_DESC("top_rated"),
+        FAVORITES("favorites");
 
         private String str;
 
