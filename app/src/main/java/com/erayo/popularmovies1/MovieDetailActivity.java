@@ -1,6 +1,7 @@
 package com.erayo.popularmovies1;
 
 import android.content.ActivityNotFoundException;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
@@ -15,9 +16,13 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.erayo.popularmovies1.db.DbContract;
 import com.erayo.popularmovies1.db.DbHelper;
+import com.erayo.popularmovies1.provider.ProviderContract;
 import com.github.paolorotolo.expandableheightlistview.ExpandableHeightListView;
 import com.squareup.picasso.Picasso;
 
@@ -35,6 +40,10 @@ import butterknife.OnClick;
 
 public class MovieDetailActivity extends AppCompatActivity implements JsonUtil.Callback {
 
+    public final static String REGULAR = "regular";
+    public final static String FAVORITE = "favorite";
+    public static String TAG = REGULAR;
+
     @BindView(R.id.imageView) ImageView poster;
     @BindView(R.id.tv_title) TextView tv_title;
     @BindView(R.id.tv_release_date) TextView tv_date;
@@ -43,8 +52,12 @@ public class MovieDetailActivity extends AppCompatActivity implements JsonUtil.C
     @BindView(R.id.star_imageButton) ImageButton star_image_button;
     @BindView(R.id.trailer_listview) ExpandableHeightListView trailer_listview;
     @BindView(R.id.comments_listview)ExpandableHeightListView comments_lisview;
+    @BindView(R.id.scrollView2)ScrollView mScrollView;
 
-    private String poster_url, title, date, overview;
+    private String poster_url;
+    private String title;
+    private String date;
+    private String overview;
     private double rating;
     private int id;
 
@@ -100,15 +113,26 @@ public class MovieDetailActivity extends AppCompatActivity implements JsonUtil.C
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
-        new JsonUtil(this).execute(trailersUrl);
-
+        if (movie.getPoster_path() != null && movie.getRelease_date() != null){
+            //favorite movie sekmesinden ULASILMADIGINI gösterir
+            TAG = REGULAR;
+            new JsonUtil(this).execute(trailersUrl);
+        }
     }
 
     private void initValues(){
         try {
-            poster_url = String.valueOf(ApiUtilities.imageUrl(movie.getPoster_path()));
+            if (movie.getPoster_path() != null)
+                poster_url = String.valueOf(ApiUtilities.imageUrl(movie.getPoster_path()));
+            else {
+                poster_url = "not available";
+                TAG = FAVORITE;
+            }
             title = movie.getTitle();
-            date = movie.getRelease_date();
+            if (movie.getRelease_date() != null)
+                date = movie.getRelease_date();
+            else
+                date = "not available";
             overview = movie.getOverview();
             rating = movie.getVote_average();
             id = movie.getId();
@@ -122,17 +146,23 @@ public class MovieDetailActivity extends AppCompatActivity implements JsonUtil.C
         if (star_image_button.getTag() == null || star_image_button.getTag().equals("off")){
             star_image_button.setImageResource(android.R.drawable.btn_star_big_on);
             star_image_button.setTag("on");
-            db.insertMovie(movie);
+            ContentValues cv = new ContentValues();
+            cv.put(DbContract.MovieEntry.MOVIE_TITLE, movie.getTitle());
+            cv.put(DbContract.MovieEntry.MOVIE_OVERVIEW, movie.getOverview());
+            cv.put(DbContract.MovieEntry.MOVIE_RELEASE_DATE, movie.getRelease_date());
+            cv.put(DbContract.MovieEntry.MOVIE_ID, movie.getId());
+            getContentResolver().insert(ProviderContract.INSERT_URI, cv);
         }
         else if (star_image_button.getTag().equals("on")){
             star_image_button.setImageResource(android.R.drawable.btn_star_big_off);
             star_image_button.setTag("off");
-            db.deleteMovie(movie);
+            getContentResolver().delete(ProviderContract.DELETE_URI, String.valueOf(movie.getId()), null);
         }
     }
 
     public void checkIfMovieIsFavoriteForStar(){
-        if (db.getMovie(movie.getId()).getCount() == 0){
+        if (getContentResolver().query(ProviderContract.GET_SINGLE_MOVIE_URI, null,
+                String.valueOf(movie.getId()), null, null).getCount() == 0){
             star_image_button.setImageResource(android.R.drawable.btn_star_big_off);
             star_image_button.setTag("off");
         } else {

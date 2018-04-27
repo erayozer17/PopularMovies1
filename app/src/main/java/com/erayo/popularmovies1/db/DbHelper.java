@@ -30,13 +30,8 @@ public class DbHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public void insertMovie(Movie movie){
+    public void insertMovie(ContentValues cv){
         SQLiteDatabase db = getWritableDatabase();
-        ContentValues cv = new ContentValues();
-        cv.put(DbContract.MovieEntry.MOVIE_TITLE, movie.getTitle());
-        cv.put(DbContract.MovieEntry.MOVIE_OVERVIEW, movie.getOverview());
-        cv.put(DbContract.MovieEntry.MOVIE_RELEASE_DATE, movie.getRelease_date());
-        cv.put(DbContract.MovieEntry.MOVIE_ID, movie.getId());
         db.insert(DbContract.MovieEntry.MOVIE_TABLE_NAME, null, cv);
         db.close();
     }
@@ -47,16 +42,15 @@ public class DbHelper extends SQLiteOpenHelper {
         return db.rawQuery( selectSql, null );
     }
 
-    public Cursor getMovie(int id){
+    public Cursor getMovie(String id){
         SQLiteDatabase db = this.getReadableDatabase();
         String selectSql = "select * from " + DbContract.MovieEntry.MOVIE_TABLE_NAME +
                 " where " + DbContract.MovieEntry.MOVIE_ID + "=" + id;
         return db.rawQuery( selectSql, null );
     }
 
-    public void deleteMovie(Movie movie){
+    public void deleteMovie(String id){
         SQLiteDatabase db = getWritableDatabase();
-        String id = String.valueOf(movie.getId());
         String deleteSql = "delete from " + DbContract.MovieEntry.MOVIE_TABLE_NAME +
                 " where " + DbContract.MovieEntry.MOVIE_ID + "=" + id;
         db.execSQL(deleteSql);

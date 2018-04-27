@@ -14,11 +14,13 @@ public class FavoriteMoviesRecyclerViewAdapter extends RecyclerView.Adapter<Favo
     public List<Movie> movieList;
     private Context context;
     private LayoutInflater mInflater;
+    final private RecyclerViewAdapter.ClickListener mOnClickListener;
 
-    public FavoriteMoviesRecyclerViewAdapter(List<Movie> list, Context context) {
+    public FavoriteMoviesRecyclerViewAdapter(List<Movie> list, Context context, RecyclerViewAdapter.ClickListener clickListener) {
         this.movieList = list;
         this.mInflater = LayoutInflater.from(context);
         this.context = context;
+        mOnClickListener = clickListener;
     }
 
     @Override
@@ -40,13 +42,20 @@ public class FavoriteMoviesRecyclerViewAdapter extends RecyclerView.Adapter<Favo
         return movieList.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder{
+    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         TextView title;
         TextView average;
         public ViewHolder(View view) {
             super(view);
             title = view.findViewById(R.id.favorite_movie_title_tv);
             average = view.findViewById(R.id.favorite_movie_average_tv);
+            view.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View v) {
+            int clickedPosition = getAdapterPosition();
+            mOnClickListener.onItemClick(clickedPosition);
         }
     }
 }

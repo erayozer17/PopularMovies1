@@ -25,7 +25,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.ClickListener,JsonUtil.Callback{
+public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.ClickListener, JsonUtil.Callback {
 
     private static final String FAVORITE_MOVIES = "favorite_movies";
 
@@ -50,31 +50,43 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
         recyclerView = findViewById(R.id.recyclerView);
         db = new DbHelper(getBaseContext());
 
-        if(savedInstanceState != null && rotationController % 2 == 1) {
-            if (savedInstanceState.containsKey(FAVORITE_MOVIES)) {
-                List<Movie> list = savedInstanceState.getParcelableArrayList(FAVORITE_MOVIES);
-                resurrectFavoriteMovies(list);
-                savedInstanceState.clear();
-            }
+        if (savedInstanceState != null) {
+            favoriteMovies = savedInstanceState.getParcelableArrayList(FAVORITE_MOVIES);
+            showFavoriteMovies();
+            savedInstanceState.clear();
         } else {
-            try {
-                if (isConnected()){
-                    URL requestedUrl = ApiUtilities.mainScreenDiscoverMoviesUrl(sortingType);
-                    jsonUtil.execute(requestedUrl);
-                    recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
-                } else {
-                    showToastForConnError();
-                    showFavoriteMovies();
+            if (MovieDetailActivity.TAG.equals(MovieDetailActivity.FAVORITE)) {
+                showFavoriteMovies();
+            } else {
+                try {
+                    if (isConnected()) {
+                        URL requestedUrl = ApiUtilities.mainScreenDiscoverMoviesUrl(sortingType);
+                        jsonUtil.execute(requestedUrl);
+                        recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
+                        MovieDetailActivity.TAG = MovieDetailActivity.REGULAR;
+                    } else {
+                        showToastForConnError();
+                        showFavoriteMovies();
+                    }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
                 }
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
             }
         }
     }
 
     @Override
     public void onItemClick(int clickedItemPosition) {
-        Movie movie = mainListMovies.get(clickedItemPosition);
+        Movie movie;
+
+        if (mMenu.findItem(R.string.voting_desc).isVisible() ||
+                mMenu.findItem(R.string.popularity_desc).isVisible() &&
+                        MovieDetailActivity.TAG.equals(MovieDetailActivity.FAVORITE)) {
+            //eğer voting desc visiblesa favoritetasındır ona göre iş yap
+            movie = favoriteMovies.get(clickedItemPosition);
+        } else {
+            movie = mainListMovies.get(clickedItemPosition);
+        }
 
         Intent intent = new Intent(MainActivity.this, MovieDetailActivity.class);
         intent.putExtra("movie", movie);
@@ -115,10 +127,10 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
 
-        switch (itemId){
+        switch (itemId) {
             case (R.string.popularity_desc):
                 try {
-                    if (isConnected()){
+                    if (isConnected()) {
                         recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
                         URL requestedUrl = ApiUtilities.mainScreenDiscoverMoviesUrl(ApiUtilities.SortingType.POPULARITY_DESC);
                         new JsonUtil(this).execute(requestedUrl);
@@ -134,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
                 break;
             case (R.string.voting_desc):
                 try {
-                    if (isConnected()){
+                    if (isConnected()) {
                         recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
                         URL requestedUrl = ApiUtilities.mainScreenDiscoverMoviesUrl(ApiUtilities.SortingType.VOTEAVERAGE_DESC);
                         new JsonUtil(this).execute(requestedUrl);
@@ -156,30 +168,31 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
         return true;
     }
 
-    private void updateMenu(){
-        if (sortingType == ApiUtilities.SortingType.POPULARITY_DESC){
+    private void updateMenu() {
+        if (sortingType == ApiUtilities.SortingType.POPULARITY_DESC) {
             mMenu.findItem(R.string.favorites).setVisible(true);
             mMenu.findItem(R.string.popularity_desc).setVisible(false);
             mMenu.findItem(R.string.voting_desc).setVisible(false);
-        } else if (sortingType == ApiUtilities.SortingType.VOTEAVERAGE_DESC){
+            MovieDetailActivity.TAG = MovieDetailActivity.REGULAR;
+        } else if (sortingType == ApiUtilities.SortingType.VOTEAVERAGE_DESC) {
             mMenu.findItem(R.string.favorites).setVisible(false);
             mMenu.findItem(R.string.popularity_desc).setVisible(true);
             mMenu.findItem(R.string.voting_desc).setVisible(false);
-        } else if (sortingType == ApiUtilities.SortingType.FAVORITES){
+        } else if (sortingType == ApiUtilities.SortingType.FAVORITES) {
             mMenu.findItem(R.string.favorites).setVisible(false);
             mMenu.findItem(R.string.popularity_desc).setVisible(false);
             mMenu.findItem(R.string.voting_desc).setVisible(true);
         }
     }
 
-    private void showFavoriteMovies(){
+    private void showFavoriteMovies() {
         sortingType = ApiUtilities.SortingType.FAVORITES;
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
         favoriteMovies = new ArrayList<>();
         Cursor cursor = getContentResolver().query(ProviderContract.CONTENT_URI, null,
                 null, null, null);
         cursor.moveToFirst();
-        while(!cursor.isAfterLast()) {
+        while (!cursor.isAfterLast()) {
             Movie movie = new Movie();
             movie.setTitle(cursor.getString(cursor.getColumnIndex(DbContract.MovieEntry.MOVIE_TITLE)));
             movie.setOverview(cursor.getString(cursor.getColumnIndex(DbContract.MovieEntry.MOVIE_OVERVIEW)));
@@ -187,29 +200,29 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
             cursor.moveToNext();
         }
         cursor.close();
-        favoriteMoviesRecyclerViewAdapter = new FavoriteMoviesRecyclerViewAdapter(favoriteMovies, this);
+        favoriteMoviesRecyclerViewAdapter = new FavoriteMoviesRecyclerViewAdapter(favoriteMovies, this, this);
         recyclerView.setAdapter(favoriteMoviesRecyclerViewAdapter);
         favoriteMoviesRecyclerViewAdapter.notifyDataSetChanged();
-        if (isConnected()){
+        if (isConnected() && MovieDetailActivity.TAG.equals(MovieDetailActivity.REGULAR)) {
             updateMenu();
         }
     }
 
-    private void resurrectFavoriteMovies(List<Movie> favoriteMovies){
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        favoriteMoviesRecyclerViewAdapter = new FavoriteMoviesRecyclerViewAdapter(favoriteMovies, this);
+    private void resurrectFavoriteMovies(List<Movie> favoriteMovies) {
+        recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
+        favoriteMoviesRecyclerViewAdapter = new FavoriteMoviesRecyclerViewAdapter(favoriteMovies, this, this);
         recyclerView.setAdapter(favoriteMoviesRecyclerViewAdapter);
         favoriteMoviesRecyclerViewAdapter.notifyDataSetChanged();
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(FAVORITE_MOVIES, favoriteMovies);
         rotationController++;
-        super.onSaveInstanceState(outState);
     }
 
-    private boolean isConnected(){
+    private boolean isConnected() {
         ConnectivityManager connectivityManager
                 = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();

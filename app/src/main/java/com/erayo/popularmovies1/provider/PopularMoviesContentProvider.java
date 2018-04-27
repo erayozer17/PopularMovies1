@@ -15,6 +15,9 @@ import com.erayo.popularmovies1.db.DbHelper;
 public class PopularMoviesContentProvider extends ContentProvider {
 
     public static final int MOVIES = 100;
+    public static final int GET_MOVIE = 101;
+    public static final int INSERT_MOVIE = 200;
+    public static final int DELETE_MOVIE = 300;
 
     private static final UriMatcher sUriMatcher = buildUriMatcher();
 
@@ -36,6 +39,9 @@ public class PopularMoviesContentProvider extends ContentProvider {
             case MOVIES:
                 retCursor =  dbHelper.getAllMovies();
                 break;
+            case GET_MOVIE:
+                retCursor = dbHelper.getMovie(selection);
+                break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
@@ -52,11 +58,27 @@ public class PopularMoviesContentProvider extends ContentProvider {
     @Nullable
     @Override
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
+        int match = sUriMatcher.match(uri);
+        switch (match) {
+            case INSERT_MOVIE:
+                dbHelper.insertMovie(values);
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
         return null;
     }
 
     @Override
     public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+        int match = sUriMatcher.match(uri);
+        switch (match) {
+            case DELETE_MOVIE:
+                dbHelper.deleteMovie(selection);
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
         return 0;
     }
 
@@ -69,6 +91,9 @@ public class PopularMoviesContentProvider extends ContentProvider {
         UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
         uriMatcher.addURI(ProviderContract.AUTHORITY, ProviderContract.PATH_MOVIES, MOVIES);
+        uriMatcher.addURI(ProviderContract.AUTHORITY, ProviderContract.GET_SINGLE_MOVIE, GET_MOVIE);
+        uriMatcher.addURI(ProviderContract.AUTHORITY, ProviderContract.INSERT_MOVIES, INSERT_MOVIE);
+        uriMatcher.addURI(ProviderContract.AUTHORITY, ProviderContract.DELETE_MOVIES, DELETE_MOVIE);
 
         return uriMatcher;
     }
