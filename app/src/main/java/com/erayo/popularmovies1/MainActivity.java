@@ -40,7 +40,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     Menu mMenu;
     DbHelper db;
     int numberOfColumns = 2;
-    static int rotationController = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,11 +49,11 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
         recyclerView = findViewById(R.id.recyclerView);
         db = new DbHelper(getBaseContext());
 
-        if (savedInstanceState != null) {
+        /*if (savedInstanceState != null) {
             favoriteMovies = savedInstanceState.getParcelableArrayList(FAVORITE_MOVIES);
             showFavoriteMovies();
             savedInstanceState.clear();
-        } else {
+        } else {*/
             if (MovieDetailActivity.TAG.equals(MovieDetailActivity.FAVORITE)) {
                 showFavoriteMovies();
             } else {
@@ -72,7 +71,14 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
                     e.printStackTrace();
                 }
             }
-        }
+        //}
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        favoriteMovies = savedInstanceState.getParcelableArrayList(FAVORITE_MOVIES);
+        showFavoriteMovies();
     }
 
     @Override
@@ -219,7 +225,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(FAVORITE_MOVIES, favoriteMovies);
-        rotationController++;
     }
 
     private boolean isConnected() {
